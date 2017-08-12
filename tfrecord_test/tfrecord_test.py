@@ -47,7 +47,7 @@ samples = sess.run(image)
 labels = sess.run(label)
 
 # 显示图片
-img = Image.fromarray(samples, 'L')
+img = Image.fromarray(samples, mode='F')
 img.show()
 
 # 将主线程阻塞，待读取线程完成后再进行
