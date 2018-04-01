@@ -160,7 +160,7 @@ def built_net(xs, ys, norm):
 
 # make up data
 fix_seed(1)
-x_data = np.linspace(-7, 10, 500)[:, np.newaxis]
+x_data = np.linspace(-7, 10, 2500)[:, np.newaxis]
 np.random.shuffle(x_data)
 noise = np.random.normal(0, 8, x_data.shape)
 y_data = np.square(x_data) - 5 + noise
