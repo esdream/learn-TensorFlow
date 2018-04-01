@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 # In[4]:
 
-ACTIVATION = tf.nn.relu
+ACTIVATION = tf.nn.tanh
 N_LAYERS = 7
 N_HIDDEN_UNITS = 30
 
@@ -68,7 +68,7 @@ def built_net(xs, ys, norm):
     def add_layer(inputs, in_size, out_size, activation_function=None, norm=False):
         # weights and biases (bad initialization for the this case)
         Weights = tf.Variable(tf.random_normal([in_size, out_size], mean=0., stddev=1.))
-        biases = tf.Variable(tf.zeros[1, out_size] + 0.1)
+        biases = tf.Variable(tf.zeros([1, out_size]) + 0.1)
         
         # fully connected product
         Wx_plus_b = tf.matmul(inputs, Weights) + biases
@@ -80,7 +80,10 @@ def built_net(xs, ys, norm):
             # 第一个参数是输入的数据，形如[batchsize, height, width, kernels]
             # axes表示在哪个维度上求解，是一个list，例如[0, 1, 2]
             # 返回的mean表示一阶矩，var则是二阶中心矩
-            fc_mean, fc_var = tf.nn.moments(Wx_plus_b, axes=[0])
+            fc_mean, fc_var = tf.nn.moments(
+                Wx_plus_b,
+                axes=[0],
+            )
             # 参数scale（扩大参数）和shift（平移参数）会被训练到
             scale = tf.Variable(tf.ones([out_size]))
             shift = tf.Variable(tf.zeros([out_size]))
@@ -112,7 +115,10 @@ def built_net(xs, ys, norm):
     # 这里是对输入数据进行normalization处理
     if(norm):
         # BN for the first input
-        fc_mean, fc_var = tf.nn.moments(xs, axes=[0])
+        fc_mean, fc_var = tf.nn.moments(
+            xs,
+            axes=[0],
+        )
         scale = tf.Variable(tf.ones([1]))
         shift = tf.Variable(tf.zeros([1]))
         epsilon = 0.001
@@ -122,31 +128,32 @@ def built_net(xs, ys, norm):
             ema_apply_op = ema.apply([fc_mean, fc_var])
             with tf.control_dependencies([ema_apply_op]):
                 return tf.identity(fc_mean), tf.identity(fc_var)
-            mean, var = mean_var_with_update()
-            xs = tf.nn.batch_normalization(xs, mean, var, shift, scale, epsilon)
-        # record inputs for every layer
-        layers_inputs = [xs]
+        mean, var = mean_var_with_update()
+        xs = tf.nn.batch_normalization(xs, mean, var, shift, scale, epsilon)
+    
+    # record inputs for every layer
+    layers_inputs = [xs]
         
-        # build hidden layers
-        for l_n in range(N_LAYERS):
-            layer_input = layers_inputs[l_n]
-            in_size = layer_inputs[l_n].get_shape()[1].value
-            
-            outupt = add_layer(
-                layer_input, # input
-                in_size, # input size
-                N_HIDDEN_UNITS, # output size
-                ACTIVATION, # activation function
-                norm, # normalize before activation
-            )
-            layers_inputs.append(output) # add output for next run
-            
-        # build output layer
-        prediction = add_layer(layers_inputs[-1], 30, 1, activation_function=None)
+    # build hidden layers
+    for l_n in range(N_LAYERS):
+        layer_input = layers_inputs[l_n]
+        in_size = layers_inputs[l_n].get_shape()[1].value
         
-        cost = tf.reduce_mean(tf.reduce_sum(tf.square(ys - prediction), reduction_indices=[1]))
-        train_op = tf.train.GradientDescentOptimizer(0.001).minimize(cost)
-        return [train_op, cost, layers_inputs]
+        output = add_layer(
+            layer_input, # input
+            in_size, # input size
+            N_HIDDEN_UNITS, # output size
+            ACTIVATION, # activation function
+            norm, # normalize before activation
+        )
+        layers_inputs.append(output) # add output for next run
+        
+    # build output layer
+    prediction = add_layer(layers_inputs[-1], 30, 1, activation_function=None)
+    
+    cost = tf.reduce_mean(tf.reduce_sum(tf.square(ys - prediction), reduction_indices=[1]))
+    train_op = tf.train.GradientDescentOptimizer(0.001).minimize(cost)
+    return [train_op, cost, layers_inputs]
 
 
 # In[8]:
@@ -204,9 +211,5 @@ with tf.Session() as sess:
     plt.plot(np.arange(len(cost_his))*record_step, np.array(cost_his_norm), label='BN')
     plt.legend()
     plt.show()
-
-
-# In[ ]:
-
 
 
